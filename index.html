@@ -32,15 +32,17 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
+  html { height: 100%; height: 100dvh; }
+
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    overflow-x: hidden;
+    overflow: hidden;
     background-image: radial-gradient(ellipse at 20% 20%, #2a1a4e 0%, transparent 50%),
                       radial-gradient(ellipse at 80% 80%, #1a2a4e 0%, transparent 50%);
   }
@@ -48,22 +50,23 @@
   header {
     width: 100%;
     max-width: 500px;
-    padding: 16px 20px 12px;
+    padding: 8px 20px 6px;
     text-align: center;
     border-bottom: 1px solid var(--border);
     position: relative;
+    flex-shrink: 0;
   }
 
   .hearts {
-    font-size: 13px;
+    font-size: 11px;
     letter-spacing: 4px;
     color: var(--accent);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   h1 {
     font-family: 'Playfair Display', serif;
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 900;
     letter-spacing: 6px;
     text-transform: uppercase;
@@ -74,22 +77,23 @@
   }
 
   .subtitle {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-muted);
     letter-spacing: 2px;
-    margin-top: 4px;
+    margin-top: 2px;
     text-transform: uppercase;
   }
 
   #message-area {
-    height: 36px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 8px 0 4px;
+    margin: 4px 0 2px;
     width: 100%;
     max-width: 500px;
     padding: 0 20px;
+    flex-shrink: 0;
   }
 
   .message {
@@ -111,38 +115,39 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 0;
+    padding: 4px 0;
     width: 100%;
+    min-height: 0;
   }
 
   #board {
     display: grid;
     grid-template-rows: repeat(6, 1fr);
-    gap: 6px;
+    gap: 5px;
     padding: 4px;
   }
 
   .row {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    gap: 5px;
   }
 
   .tile {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     border: 2px solid var(--border);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Playfair Display', serif;
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
     text-transform: uppercase;
+    color: var(--text);
     transition: border-color 0.1s;
     position: relative;
-    overflow: hidden;
     user-select: none;
   }
 
@@ -166,33 +171,67 @@
     animation: flipAbsent 0.5s ease forwards;
   }
 
-  .tile.revealed.correct { background: var(--correct); border-color: var(--correct); color: white; }
-  .tile.revealed.present { background: var(--present); border-color: var(--present); color: white; }
-  .tile.revealed.absent  { background: var(--absent);  border-color: var(--absent);  color: var(--text-muted); }
+  .tile.revealed.correct { background: var(--correct); border-color: var(--correct); color: white !important; }
+  .tile.revealed.present { background: var(--present); border-color: var(--present); color: white !important; }
+  .tile.revealed.absent  { background: var(--absent);  border-color: var(--absent);  color: #ccccdd !important; }
 
   .tile.bounce { animation: tileBounce 0.6s ease forwards; }
 
-  #keyboard {
+  #new-game-btn {
+    display: none;
+    margin: 6px auto 0;
+    padding: 10px 28px;
+    background: linear-gradient(135deg, var(--accent), #c73652);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
+  }
+
+  #new-game-btn:active { transform: scale(0.96); }
+
+  /* Responsive for small screens */
+  @media (max-height: 700px) {
+    .tile { width: 46px; height: 46px; font-size: 20px; }
+    .key  { height: 44px; font-size: 12px; }
+    h1    { font-size: 20px; }
+  }
+  @media (max-height: 620px) {
+    .tile { width: 40px; height: 40px; font-size: 18px; }
+    .key  { height: 38px; font-size: 11px; }
+    h1    { font-size: 18px; }
+    .hearts { display: none; }
+    .subtitle { display: none; }
+  }
     width: 100%;
     max-width: 500px;
-    padding: 8px 10px 16px;
+    padding: 4px 8px 10px;
+    flex-shrink: 0;
   }
 
   .kb-row {
     display: flex;
     justify-content: center;
-    gap: 5px;
-    margin-bottom: 5px;
+    gap: 4px;
+    margin-bottom: 4px;
   }
 
   .key {
-    height: 54px;
-    min-width: 32px;
-    padding: 0 6px;
+    height: 48px;
+    min-width: 28px;
+    padding: 0 4px;
     flex: 1;
-    max-width: 40px;
+    max-width: 38px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--key-bg);
     color: var(--key-text);
     font-family: 'DM Sans', sans-serif;
@@ -216,42 +255,21 @@
   .key.present { background: #4caf87; color: white; }
   .key.absent  { background: #c0392b; color: #ffaaaa; }
 
-  #new-game-btn {
-    display: none;
-    margin: 8px auto 0;
-    padding: 12px 32px;
-    background: linear-gradient(135deg, var(--accent), #c73652);
-    color: white;
-    border: none;
-    border-radius: 24px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    cursor: pointer;
-    text-transform: uppercase;
-    box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-
-  #new-game-btn:active { transform: scale(0.96); }
-
   #stats-bar {
     display: flex;
     gap: 20px;
     justify-content: center;
-    padding: 6px 20px 2px;
+    padding: 4px 20px 2px;
     width: 100%;
     max-width: 500px;
+    flex-shrink: 0;
   }
 
-  .stat {
-    text-align: center;
-  }
+  .stat { text-align: center; }
 
   .stat-num {
     font-family: 'Playfair Display', serif;
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text);
     line-height: 1;
@@ -311,16 +329,6 @@
     to   { opacity: 1; transform: scale(1); }
   }
 
-  /* Responsive for small screens */
-  @media (max-height: 680px) {
-    .tile { width: 50px; height: 50px; font-size: 22px; }
-    .key  { height: 46px; }
-    h1    { font-size: 22px; }
-  }
-  @media (max-height: 600px) {
-    .tile { width: 44px; height: 44px; font-size: 20px; }
-    .key  { height: 40px; font-size: 11px; }
-  }
 </style>
 </head>
 <body>
@@ -1671,9 +1679,17 @@ function renderStats() {
 function buildBoard() {
   const b = document.getElementById('board');
   b.innerHTML = '';
-  // Responsive tile size
+  // Calculate tile size based on available space
   const vw = Math.min(window.innerWidth, 500);
-  const tileSize = Math.min(56, Math.floor((vw - 60) / 5));
+  // Available height = total - header - stats - message - keyboard - padding
+  const headerH = document.querySelector('header').offsetHeight;
+  const statsH = document.getElementById('stats-bar').offsetHeight;
+  const msgH = document.getElementById('message-area').offsetHeight;
+  const kbH = document.getElementById('keyboard').offsetHeight;
+  const availH = window.innerHeight - headerH - statsH - msgH - kbH - 40;
+  const tileByH = Math.floor((availH - 5*6) / 6); // 6 rows, 5 gaps
+  const tileByW = Math.floor((vw - 60) / 5);       // 5 cols
+  const tileSize = Math.min(52, tileByH, tileByW);
   b.style.gridTemplateRows = `repeat(6, ${tileSize}px)`;
   for (let r = 0; r < 6; r++) {
     const row = document.createElement('div');
@@ -1684,7 +1700,7 @@ function buildBoard() {
       tile.className = 'tile';
       tile.id = `tile-${r}-${c}`;
       tile.style.width = tile.style.height = tileSize + 'px';
-      tile.style.fontSize = Math.floor(tileSize * 0.46) + 'px';
+      tile.style.fontSize = Math.floor(tileSize * 0.44) + 'px';
       row.appendChild(tile);
     }
     b.appendChild(row);
