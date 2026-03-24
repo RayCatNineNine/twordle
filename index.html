@@ -1,62 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Twordle</title>
-<meta name="description" content="Twordle — a word game for two">
-<meta name="theme-color" content="#1a1a2e">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Twordle">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap');
 
+  <!--
+  ╔══════════════════════════════════════════════════════════╗
+  ║                    TWORDLE                               ║
+  ║           A Wordle-style word game for two               ║
+  ╚══════════════════════════════════════════════════════════╝
+
+  HOW THE FILE IS ORGANISED:
+  1. <head>   — page settings, PWA config, fonts
+  2. <style>  — all the visual styling (CSS)
+  3. <body>   — the HTML structure (what you see on screen)
+  4. <script> — all the game logic (JavaScript)
+  -->
+
+  <!-- Tell the browser this is UTF-8 text (supports emoji etc.) -->
+  <meta charset="UTF-8">
+
+  <!--
+    viewport meta tag — critical for mobile.
+    width=device-width  : use the actual screen width, not a desktop zoom-out
+    initial-scale=1.0   : don't zoom in or out on load
+    maximum-scale=1.0   : prevent the browser zooming when you tap an input
+    user-scalable=no    : stop pinch-to-zoom (keeps layout stable)
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>Twordle</title>
+  <meta name="description" content="Twordle — a word game for two">
+
+  <!--
+    PWA (Progressive Web App) meta tags.
+    These let the browser know this site can be "installed"
+    as an app on the home screen.
+  -->
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Twordle">
+
+  <!-- Links to the manifest.json file which describes the app (name, icons etc.) -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- The icon shown on the home screen for Apple devices -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!--
+    Load two Google Fonts:
+    - Playfair Display: elegant serif used for the title and tile letters
+    - DM Sans: clean sans-serif used for the keyboard and UI text
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap">
+
+<style>
+
+  /* ── CSS CUSTOM PROPERTIES (variables) ──────────────────────────────────────
+     Define all colours in one place so they're easy to change.
+     Usage: var(--bg) refers to the background colour defined here.
+  ─────────────────────────────────────────────────────────────────────────── */
   :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --card: #0f3460;
-    --accent: #e94560;
-    --accent2: #f5a623;
-    --correct: #4caf87;
-    --present: #f5a623;
-    --absent: #3a3a5c;
-    --text: #f0e6ff;
-    --text-muted: #8888aa;
-    --border: #2a2a4a;
-    --key-bg: #2a2a4a;
-    --key-text: #f0e6ff;
+    --bg:         #1a1a2e;  /* main dark navy background */
+    --accent:     #e94560;  /* pink/red — used for highlights and wrong letters */
+    --accent2:    #f5a623;  /* amber — used for present (right letter, wrong place) */
+    --correct:    #4caf87;  /* green — letter is correct and in right position */
+    --present:    #f5a623;  /* amber — letter is in the word but wrong position */
+    --absent:     #3a3a5c;  /* dark purple — letter is not in the word */
+    --text:       #f0e6ff;  /* near-white with a slight purple tint */
+    --text-muted: #8888aa;  /* dimmer text for labels */
+    --border:     #2a2a4a;  /* subtle border colour */
+    --key-bg:     #2a2a4a;  /* default keyboard key background */
+    --key-text:   #f0e6ff;  /* keyboard key text colour */
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  /* ── RESET ───────────────────────────────────────────────────────────────────
+     Remove default browser spacing and make sizing predictable.
+     box-sizing: border-box means padding is included inside the element's width.
+     -webkit-tap-highlight-color: transparent removes the blue flash on mobile taps.
+  ─────────────────────────────────────────────────────────────────────────── */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-  html { height: 100%; height: 100dvh; }
+  /* ── ROOT HTML ELEMENT ───────────────────────────────────────────────────────
+     100dvh = 100% of the "dynamic viewport height".
+     On mobile, dvh accounts for the browser's address bar appearing/disappearing,
+     which plain 100vh does not. This prevents the page from being taller than
+     the visible area.
+  ─────────────────────────────────────────────────────────────────────────── */
+  html {
+    height: 100dvh;
+  }
 
+  /* ── BODY ────────────────────────────────────────────────────────────────────
+     Flexbox column layout — header at top, board in middle, keyboard at bottom.
+     overflow: hidden prevents any scrolling (we want everything on one screen).
+  ─────────────────────────────────────────────────────────────────────────── */
   body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
+    background-color: var(--bg);
     color: var(--text);
     height: 100dvh;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow: hidden;
-    background-image: radial-gradient(ellipse at 20% 20%, #2a1a4e 0%, transparent 50%),
-                      radial-gradient(ellipse at 80% 80%, #1a2a4e 0%, transparent 50%);
+    flex-direction: column;  /* stack children top to bottom */
+    align-items: center;     /* centre children horizontally */
+    overflow: hidden;        /* no scrolling — everything fits on screen */
+    /* Subtle radial gradient blobs in the background for depth */
+    background-image:
+      radial-gradient(ellipse at 20% 20%, #2a1a4e 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, #1a2a4e 0%, transparent 50%);
   }
 
+  /* ── HEADER ──────────────────────────────────────────────────────────────────
+     flex-shrink: 0 means this element will NOT shrink if the screen is small.
+     It always takes exactly as much space as its content needs.
+  ─────────────────────────────────────────────────────────────────────────── */
   header {
     width: 100%;
     max-width: 500px;
     padding: 8px 20px 6px;
     text-align: center;
     border-bottom: 1px solid var(--border);
-    position: relative;
     flex-shrink: 0;
   }
 
+  /* Small decorative hearts row above the title */
   .hearts {
     font-size: 11px;
     letter-spacing: 4px;
@@ -64,6 +136,13 @@
     margin-bottom: 2px;
   }
 
+  /* ── TITLE ───────────────────────────────────────────────────────────────────
+     The gradient text trick:
+     1. Set a linear-gradient as the background
+     2. Clip the background to just the text shape (-webkit-background-clip: text)
+     3. Make the text colour transparent so the background shows through
+     Result: the letters appear to be filled with a gradient.
+  ─────────────────────────────────────────────────────────────────────────── */
   h1 {
     font-family: 'Playfair Display', serif;
     font-size: 22px;
@@ -71,9 +150,10 @@
     letter-spacing: 6px;
     text-transform: uppercase;
     background: linear-gradient(135deg, #f0e6ff, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    -webkit-background-clip: text;  /* clips background to text (Chrome/Safari) */
+    background-clip: text;          /* standard version */
+    -webkit-text-fill-color: transparent; /* makes text see-through (Chrome/Safari) */
+    color: transparent;             /* standard fallback */
   }
 
   .subtitle {
@@ -84,6 +164,41 @@
     text-transform: uppercase;
   }
 
+  /* ── STATS BAR ───────────────────────────────────────────────────────────────
+     Shows Played / Won / Streak / Best across the top.
+     flex-shrink: 0 — never shrinks, always visible.
+  ─────────────────────────────────────────────────────────────────────────── */
+  #stats-bar {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    padding: 4px 20px 2px;
+    width: 100%;
+    max-width: 500px;
+    flex-shrink: 0;
+  }
+
+  .stat { text-align: center; }
+
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* ── MESSAGE AREA ────────────────────────────────────────────────────────────
+     The strip that shows messages like "Not in word list" or "Brilliant! ✨"
+     Fixed height so the board doesn't jump when a message appears.
+  ─────────────────────────────────────────────────────────────────────────── */
   #message-area {
     height: 30px;
     display: flex;
@@ -92,24 +207,26 @@
     margin: 4px 0 2px;
     width: 100%;
     max-width: 500px;
-    padding: 0 20px;
     flex-shrink: 0;
   }
 
+  /* Individual message pill — different colours for info / win / lose */
   .message {
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 1px;
-    padding: 6px 18px;
+    padding: 5px 16px;
     border-radius: 20px;
-    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    text-align: center;
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* springy entrance */
   }
+  .message.info { background: rgba(229,69,96,0.2);  color: var(--accent);  border: 1px solid rgba(229,69,96,0.3); }
+  .message.win  { background: rgba(76,175,135,0.2); color: var(--correct); border: 1px solid rgba(76,175,135,0.3); }
+  .message.lose { background: rgba(245,166,35,0.2); color: var(--accent2); border: 1px solid rgba(245,166,35,0.3); }
 
-  .message.info { background: rgba(229, 69, 96, 0.2); color: var(--accent); border: 1px solid rgba(229,69,96,0.3); }
-  .message.win  { background: rgba(76, 175, 135, 0.2); color: var(--correct); border: 1px solid rgba(76,175,135,0.3); }
-  .message.lose { background: rgba(245, 166, 35, 0.2); color: var(--accent2); border: 1px solid rgba(245,166,35,0.3); }
-
+  /* ── BOARD CONTAINER ─────────────────────────────────────────────────────────
+     flex: 1        — takes up ALL remaining vertical space between message and keyboard
+     min-height: 0  — required in flexbox so the child can shrink below its natural size
+  ─────────────────────────────────────────────────────────────────────────── */
   #board-container {
     flex: 1;
     display: flex;
@@ -120,103 +237,99 @@
     min-height: 0;
   }
 
+  /* ── BOARD GRID ──────────────────────────────────────────────────────────────
+     CSS Grid with 6 rows and 5px gaps. The row heights are set dynamically by
+     JavaScript (buildBoard function) based on available screen space.
+  ─────────────────────────────────────────────────────────────────────────── */
   #board {
     display: grid;
-    grid-template-rows: repeat(6, 1fr);
+    grid-template-rows: repeat(6, 1fr); /* 6 equal rows — JS overrides the height */
     gap: 5px;
     padding: 4px;
   }
 
+  /* Each of the 6 guess rows — also a grid with 5 columns */
   .row {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 5px;
   }
 
+  /* ── TILE ────────────────────────────────────────────────────────────────────
+     Each individual letter square.
+     Size and font-size are set dynamically by JavaScript.
+     color: var(--text) ensures letters are visible before revealing.
+  ─────────────────────────────────────────────────────────────────────────── */
   .tile {
-    width: 52px;
-    height: 52px;
+    width: 52px;   /* overridden by JS */
+    height: 52px;  /* overridden by JS */
     border: 2px solid var(--border);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Playfair Display', serif;
-    font-size: 24px;
+    font-size: 24px;  /* overridden by JS */
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text);
+    color: var(--text);     /* default letter colour — light purple-white */
     transition: border-color 0.1s;
-    position: relative;
-    user-select: none;
+    user-select: none;      /* can't accidentally select/copy text */
   }
 
-  .tile.filled { border-color: #5a5a7a; }
-
-  .tile.pop {
-    animation: tilePop 0.1s ease;
+  /* When a letter has been typed into this tile, brighten the border */
+  .tile.filled {
+    border-color: #5a5a7a;
   }
 
-  .tile.shake {
-    animation: tileShake 0.5s ease;
+  /* ── TILE ANIMATIONS ─────────────────────────────────────────────────────────
+     pop    — small bounce when you type a letter
+     shake  — horizontal wiggle when guess is invalid
+     flip-* — 3D flip animation when a row is revealed (different end colours)
+     bounce — tiles jump up when you win
+  ─────────────────────────────────────────────────────────────────────────── */
+  .tile.pop   { animation: tilePop   0.1s ease; }
+  .tile.shake { animation: tileShake 0.5s ease; }
+  .tile.flip-correct { animation: flipCorrect 0.5s ease forwards; }
+  .tile.flip-present { animation: flipPresent 0.5s ease forwards; }
+  .tile.flip-absent  { animation: flipAbsent  0.5s ease forwards; }
+  .tile.bounce       { animation: tileBounce  0.6s ease forwards; }
+
+  /* ── REVEALED TILE COLOURS ───────────────────────────────────────────────────
+     Applied after the flip animation completes.
+     !important overrides any inherited colour so letters are always readable.
+     correct = green   (right letter, right position)
+     present = amber   (right letter, wrong position)
+     absent  = dark    (letter not in the word)
+  ─────────────────────────────────────────────────────────────────────────── */
+  .tile.revealed.correct {
+    background: var(--correct);
+    border-color: var(--correct);
+    color: white !important;
+  }
+  .tile.revealed.present {
+    background: var(--present);
+    border-color: var(--present);
+    color: white !important;
+  }
+  .tile.revealed.absent {
+    background: var(--absent);
+    border-color: var(--absent);
+    color: #ccccdd !important;
   }
 
-  .tile.flip-correct {
-    animation: flipCorrect 0.5s ease forwards;
-  }
-  .tile.flip-present {
-    animation: flipPresent 0.5s ease forwards;
-  }
-  .tile.flip-absent {
-    animation: flipAbsent 0.5s ease forwards;
-  }
-
-  .tile.revealed.correct { background: var(--correct); border-color: var(--correct); color: white !important; }
-  .tile.revealed.present { background: var(--present); border-color: var(--present); color: white !important; }
-  .tile.revealed.absent  { background: var(--absent);  border-color: var(--absent);  color: #ccccdd !important; }
-
-  .tile.bounce { animation: tileBounce 0.6s ease forwards; }
-
-  #new-game-btn {
-    display: none;
-    margin: 6px auto 0;
-    padding: 10px 28px;
-    background: linear-gradient(135deg, var(--accent), #c73652);
-    color: white;
-    border: none;
-    border-radius: 24px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    cursor: pointer;
-    text-transform: uppercase;
-    box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
-    transition: transform 0.2s, box-shadow 0.2s;
-    flex-shrink: 0;
-  }
-
-  #new-game-btn:active { transform: scale(0.96); }
-
-  /* Responsive for small screens */
-  @media (max-height: 700px) {
-    .tile { width: 46px; height: 46px; font-size: 20px; }
-    .key  { height: 44px; font-size: 12px; }
-    h1    { font-size: 20px; }
-  }
-  @media (max-height: 620px) {
-    .tile { width: 40px; height: 40px; font-size: 18px; }
-    .key  { height: 38px; font-size: 11px; }
-    h1    { font-size: 18px; }
-    .hearts { display: none; }
-    .subtitle { display: none; }
-  }
+  /* ── KEYBOARD ────────────────────────────────────────────────────────────────
+     flex-shrink: 0 — keyboard never shrinks; it always takes its natural height.
+     This is important — we need it fully visible at the bottom of the screen.
+  ─────────────────────────────────────────────────────────────────────────── */
+  #keyboard {
     width: 100%;
     max-width: 500px;
-    padding: 4px 8px 10px;
+    padding: 4px 8px 12px;
     flex-shrink: 0;
   }
 
+  /* Each row of keys (QWERTYUIOP, ASDFGHJKL, ENTER+ZXCVBNM+⌫) */
   .kb-row {
     display: flex;
     justify-content: center;
@@ -224,6 +337,11 @@
     margin-bottom: 4px;
   }
 
+  /* ── INDIVIDUAL KEY ──────────────────────────────────────────────────────────
+     flex: 1      — keys share available width equally in their row
+     max-width    — but don't grow wider than 38px
+     height: 48px — tall enough to tap comfortably on a phone
+  ─────────────────────────────────────────────────────────────────────────── */
   .key {
     height: 48px;
     min-width: 28px;
@@ -243,52 +361,78 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    letter-spacing: 0.5px;
     -webkit-user-select: none;
     user-select: none;
   }
 
+  /* Slight shrink on press for tactile feel */
   .key:active { transform: scale(0.94); }
-  .key.wide { max-width: 56px; font-size: 11px; letter-spacing: 0; }
 
+  /* Enter and Backspace keys are wider than letter keys */
+  .key.wide { max-width: 56px; font-size: 11px; }
+
+  /* ── KEY COLOURS AFTER GUESSING ──────────────────────────────────────────────
+     correct & present both go green (letter IS in the word).
+     absent goes red (letter is NOT in the word at all).
+  ─────────────────────────────────────────────────────────────────────────── */
   .key.correct { background: #4caf87; color: white; }
   .key.present { background: #4caf87; color: white; }
   .key.absent  { background: #c0392b; color: #ffaaaa; }
 
-  #stats-bar {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    padding: 4px 20px 2px;
-    width: 100%;
-    max-width: 500px;
+  /* ── NEW GAME BUTTON ─────────────────────────────────────────────────────────
+     Hidden by default (display: none).
+     JavaScript sets display: inline-block when the game ends.
+  ─────────────────────────────────────────────────────────────────────────── */
+  #new-game-btn {
+    display: none;
+    margin: 6px auto 0;
+    padding: 10px 28px;
+    background: linear-gradient(135deg, var(--accent), #c73652);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 20px rgba(233,69,96,0.4);
+    transition: transform 0.2s;
     flex-shrink: 0;
   }
+  #new-game-btn:active { transform: scale(0.96); }
 
-  .stat { text-align: center; }
-
-  .stat-num {
-    font-family: 'Playfair Display', serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1;
+  /* ── RESPONSIVE BREAKPOINTS ──────────────────────────────────────────────────
+     These kick in for shorter screens (e.g. older/smaller phones).
+     They shrink the tiles and keys so everything still fits.
+  ─────────────────────────────────────────────────────────────────────────── */
+  @media (max-height: 700px) {
+    .tile { width: 46px; height: 46px; font-size: 20px; }
+    .key  { height: 44px; }
+    h1    { font-size: 18px; }
+  }
+  @media (max-height: 620px) {
+    .tile { width: 40px; height: 40px; font-size: 18px; }
+    .key  { height: 38px; font-size: 11px; }
+    /* Hide decorative elements to save space on very small screens */
+    .hearts   { display: none; }
+    .subtitle { display: none; }
   }
 
-  .stat-label {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 2px;
-  }
+  /* ── KEYFRAME ANIMATIONS ─────────────────────────────────────────────────────
+     CSS animations. @keyframes defines the steps; the animation property on the
+     element controls speed, timing, and whether it loops.
+  ─────────────────────────────────────────────────────────────────────────── */
 
+  /* Small pop when a letter is typed */
   @keyframes tilePop {
     0%   { transform: scale(1); }
     50%  { transform: scale(1.12); }
     100% { transform: scale(1); }
   }
 
+  /* Horizontal shake for invalid guesses */
   @keyframes tileShake {
     0%, 100% { transform: translateX(0); }
     15%  { transform: translateX(-6px); }
@@ -299,24 +443,29 @@
     90%  { transform: translateX(3px); }
   }
 
+  /*
+    3D flip animations for revealing each tile.
+    - First half (0%→50%): tile rotates forward 90deg (disappears edge-on)
+    - Second half (50%→100%): tile comes back to flat, now with the new colour
+    The 'forwards' fill-mode keeps the final state after the animation ends.
+  */
   @keyframes flipCorrect {
-    0%   { transform: rotateX(0); }
-    50%  { transform: rotateX(-90deg); background: transparent; border-color: #5a5a7a; }
-    100% { transform: rotateX(0); background: var(--correct); border-color: var(--correct); color: white; }
+    0%   { transform: rotateX(0deg); }
+    50%  { transform: rotateX(-90deg); background: transparent; }
+    100% { transform: rotateX(0deg);  background: var(--correct); border-color: var(--correct); color: white; }
   }
-
   @keyframes flipPresent {
-    0%   { transform: rotateX(0); }
-    50%  { transform: rotateX(-90deg); background: transparent; border-color: #5a5a7a; }
-    100% { transform: rotateX(0); background: var(--present); border-color: var(--present); color: white; }
+    0%   { transform: rotateX(0deg); }
+    50%  { transform: rotateX(-90deg); background: transparent; }
+    100% { transform: rotateX(0deg);  background: var(--present); border-color: var(--present); color: white; }
   }
-
   @keyframes flipAbsent {
-    0%   { transform: rotateX(0); }
-    50%  { transform: rotateX(-90deg); background: transparent; border-color: #5a5a7a; }
-    100% { transform: rotateX(0); background: var(--absent); border-color: var(--absent); color: var(--text-muted); }
+    0%   { transform: rotateX(0deg); }
+    50%  { transform: rotateX(-90deg); background: transparent; }
+    100% { transform: rotateX(0deg);  background: var(--absent); border-color: var(--absent); color: #ccccdd; }
   }
 
+  /* Winning bounce — tiles jump up one by one */
   @keyframes tileBounce {
     0%, 100% { transform: translateY(0); }
     30%  { transform: translateY(-16px); }
@@ -324,6 +473,7 @@
     80%  { transform: translateY(-4px); }
   }
 
+  /* Message pill pops in with a springy effect */
   @keyframes popIn {
     from { opacity: 0; transform: scale(0.8); }
     to   { opacity: 1; transform: scale(1); }
@@ -333,31 +483,63 @@
 </head>
 <body>
 
+<!-- ── HEADER ─────────────────────────────────────────────────────────────── -->
 <header>
   <div class="hearts">♥ ♥ ♥</div>
   <h1>Twordle</h1>
   <div class="subtitle">A word game for two</div>
 </header>
 
+<!-- ── STATS BAR ──────────────────────────────────────────────────────────── -->
+<!-- Each .stat has a number (updated by JS) and a label underneath -->
 <div id="stats-bar">
-  <div class="stat"><div class="stat-num" id="stat-played">0</div><div class="stat-label">Played</div></div>
-  <div class="stat"><div class="stat-num" id="stat-won">0</div><div class="stat-label">Won</div></div>
-  <div class="stat"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">Streak</div></div>
-  <div class="stat"><div class="stat-num" id="stat-best">0</div><div class="stat-label">Best</div></div>
+  <div class="stat">
+    <div class="stat-num" id="stat-played">0</div>
+    <div class="stat-label">Played</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="stat-won">0</div>
+    <div class="stat-label">Won</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="stat-streak">0</div>
+    <div class="stat-label">Streak</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="stat-best">0</div>
+    <div class="stat-label">Best</div>
+  </div>
 </div>
 
+<!-- ── MESSAGE AREA ───────────────────────────────────────────────────────── -->
+<!-- JS injects a <div class="message ..."> here when it needs to show text -->
 <div id="message-area"></div>
 
+<!-- ── GAME BOARD ─────────────────────────────────────────────────────────── -->
+<!-- The 6x5 grid of tiles is built entirely by JavaScript (buildBoard) -->
 <div id="board-container">
   <div id="board"></div>
 </div>
 
+<!-- ── ON-SCREEN KEYBOARD ─────────────────────────────────────────────────── -->
+<!-- The keyboard rows and keys are built entirely by JavaScript (buildKeyboard) -->
 <div id="keyboard"></div>
+
+<!-- New game button — hidden until a game ends, then shown by JS -->
 <div style="text-align:center; padding-bottom:4px;">
   <button id="new-game-btn" onclick="newGame()">New Game ♥</button>
 </div>
 
 <script>
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   WORD LIST
+   A template literal (backtick string) containing one word per line.
+   .trim()   removes any leading/trailing whitespace or blank lines
+   .split()  converts the single string into an array, splitting at each newline
+   .filter() removes any entries that aren't exactly 5 letters
+   (The 'adieu' at the top is a manually added word — rest are alphabetical)
+══════════════════════════════════════════════════════════════════════════════ */
 const WORDS = `adieu
 abbey
 abbot
@@ -1659,47 +1841,99 @@ zebra
 zones
 `.trim().split('\n').filter(w => w.length === 5);
 
-// ── State ──────────────────────────────────────────────────────────────────
-let answer = '', currentRow = 0, currentCol = 0, gameOver = false;
-let board = Array.from({length:6}, ()=>Array(5).fill(''));
-let revealed = Array.from({length:6}, ()=>Array(5).fill(''));
 
-// ── Stats ──────────────────────────────────────────────────────────────────
-let stats = JSON.parse(localStorage.getItem('wrdl-stats')||'{"played":0,"won":0,"streak":0,"best":0}');
+/* ══════════════════════════════════════════════════════════════════════════════
+   GAME STATE
+   These variables track everything about the current game in progress.
+   They are reset by newGame() at the start of each round.
+══════════════════════════════════════════════════════════════════════════════ */
+let answer     = '';     // The secret word the player is trying to guess
+let currentRow = 0;      // Which row (guess number) we're on — 0 to 5
+let currentCol = 0;      // Which column (letter position) we're on — 0 to 4
+let gameOver   = false;  // True once the player wins or runs out of guesses
 
-function saveStats() { localStorage.setItem('wrdl-stats', JSON.stringify(stats)); }
-function renderStats() {
-  document.getElementById('stat-played').textContent = stats.played;
-  document.getElementById('stat-won').textContent = stats.won;
-  document.getElementById('stat-streak').textContent = stats.streak;
-  document.getElementById('stat-best').textContent = stats.best;
+// 6x5 grid storing the letters typed so far
+// e.g. board[2][3] = 'd' means row 2, column 3 has the letter 'd'
+let board = Array.from({ length: 6 }, () => Array(5).fill(''));
+
+// 6x5 grid storing the reveal state of each tile
+// Values: '' (not yet revealed), 'correct', 'present', or 'absent'
+let revealed = Array.from({ length: 6 }, () => Array(5).fill(''));
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   STATS
+   Saved to localStorage so they persist between sessions.
+   localStorage is a simple key-value store built into every browser.
+   JSON.parse converts the stored string back into a JavaScript object.
+   The || provides a default if nothing is stored yet.
+══════════════════════════════════════════════════════════════════════════════ */
+let stats = JSON.parse(
+  localStorage.getItem('twordle-stats') ||
+  '{"played":0,"won":0,"streak":0,"best":0}'
+);
+
+// Saves the current stats object back to localStorage as a JSON string
+function saveStats() {
+  localStorage.setItem('twordle-stats', JSON.stringify(stats));
 }
 
-// ── Board ──────────────────────────────────────────────────────────────────
+// Updates the four numbers shown in the stats bar at the top of the screen
+function renderStats() {
+  document.getElementById('stat-played').textContent = stats.played;
+  document.getElementById('stat-won').textContent    = stats.won;
+  document.getElementById('stat-streak').textContent = stats.streak;
+  document.getElementById('stat-best').textContent   = stats.best;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BOARD BUILDER
+   Creates the 6 rows × 5 tiles grid dynamically in JavaScript.
+   Tile size is calculated from the actual available screen space so the
+   whole game always fits without scrolling, on any phone.
+══════════════════════════════════════════════════════════════════════════════ */
 function buildBoard() {
   const b = document.getElementById('board');
-  b.innerHTML = '';
-  // Calculate tile size based on available space
+  b.innerHTML = ''; // Clear any existing tiles (used when starting a new game)
+
+  // -- Calculate how big each tile can be --
+
+  // Available width: screen width (capped at 500px), minus 60px for side padding
   const vw = Math.min(window.innerWidth, 500);
-  // Available height = total - header - stats - message - keyboard - padding
+
+  // Available height: total screen height minus the height of every other element
   const headerH = document.querySelector('header').offsetHeight;
-  const statsH = document.getElementById('stats-bar').offsetHeight;
-  const msgH = document.getElementById('message-area').offsetHeight;
-  const kbH = document.getElementById('keyboard').offsetHeight;
-  const availH = window.innerHeight - headerH - statsH - msgH - kbH - 40;
-  const tileByH = Math.floor((availH - 5*6) / 6); // 6 rows, 5 gaps
-  const tileByW = Math.floor((vw - 60) / 5);       // 5 cols
+  const statsH  = document.getElementById('stats-bar').offsetHeight;
+  const msgH    = document.getElementById('message-area').offsetHeight;
+  const kbH     = document.getElementById('keyboard').offsetHeight;
+  const btnH    = document.getElementById('new-game-btn').offsetHeight || 0;
+  const availH  = window.innerHeight - headerH - statsH - msgH - kbH - btnH - 40;
+
+  // How big can a tile be if we fit 6 rows (with 5 gaps of 5px each)?
+  const tileByH = Math.floor((availH - 5 * 5) / 6);
+
+  // How big can a tile be if we fit 5 columns (with 4 gaps of 5px each)?
+  const tileByW = Math.floor((vw - 4 * 5 - 20) / 5);
+
+  // Use whichever is smaller, but no larger than 52px
   const tileSize = Math.min(52, tileByH, tileByW);
+
+  // Set the grid row heights to match the calculated tile size
   b.style.gridTemplateRows = `repeat(6, ${tileSize}px)`;
+
+  // -- Build the tiles --
   for (let r = 0; r < 6; r++) {
     const row = document.createElement('div');
     row.className = 'row';
     row.id = `row-${r}`;
+
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement('div');
       tile.className = 'tile';
-      tile.id = `tile-${r}-${c}`;
-      tile.style.width = tile.style.height = tileSize + 'px';
+      tile.id = `tile-${r}-${c}`;                         // e.g. "tile-2-3"
+      tile.style.width  = tileSize + 'px';
+      tile.style.height = tileSize + 'px';
       tile.style.fontSize = Math.floor(tileSize * 0.44) + 'px';
       row.appendChild(tile);
     }
@@ -1707,134 +1941,220 @@ function buildBoard() {
   }
 }
 
+/* Updates the visual content of a single tile.
+   Called when a letter is typed or deleted. */
 function updateTile(r, c, letter) {
   const tile = document.getElementById(`tile-${r}-${c}`);
   tile.textContent = letter.toUpperCase();
+
   if (letter) {
+    // Trigger the pop animation by removing and re-adding the class
+    // void tile.offsetWidth forces the browser to re-render between removes/adds
     tile.classList.add('filled');
     tile.classList.remove('pop');
-    void tile.offsetWidth;
+    void tile.offsetWidth;  // forces reflow so animation restarts
     tile.classList.add('pop');
   } else {
+    // Letter was deleted — clear the tile
     tile.classList.remove('filled');
     tile.textContent = '';
   }
 }
 
-// ── Keyboard ───────────────────────────────────────────────────────────────
-const KB_ROWS = [['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l'],['Enter','z','x','c','v','b','n','m','⌫']];
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   KEYBOARD BUILDER
+   Builds the on-screen keyboard from a 2D array of key labels.
+   Each key is a <button> element that calls handleKey() when tapped.
+══════════════════════════════════════════════════════════════════════════════ */
+
+// The three rows of the keyboard layout
+const KB_ROWS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+  ['Enter','z','x','c','v','b','n','m','⌫']
+];
 
 function buildKeyboard() {
   const kb = document.getElementById('keyboard');
-  kb.innerHTML = '';
+  kb.innerHTML = ''; // Clear on new game
+
   KB_ROWS.forEach(row => {
     const div = document.createElement('div');
     div.className = 'kb-row';
+
     row.forEach(k => {
       const btn = document.createElement('button');
+
+      // 'wide' class makes Enter and ⌫ keys wider than letter keys
       btn.className = 'key' + (k.length > 1 ? ' wide' : '');
-      btn.dataset.state = '';
-      btn.id = 'key-' + k;
-      btn.textContent = k === '⌫' ? '⌫' : k.toUpperCase();
+      btn.dataset.state = '';  // tracks colour state: '' | 'correct' | 'present' | 'absent'
+      btn.id = 'key-' + k;    // e.g. 'key-a', 'key-Enter', 'key-⌫'
+
+      // Show ⌫ symbol for backspace, uppercase letters for everything else
+      btn.textContent = (k === '⌫') ? '⌫' : k.toUpperCase();
+
+      // When the key is tapped, call handleKey with the normalised key name
       btn.addEventListener('click', () => handleKey(k === '⌫' ? 'Backspace' : k));
+
       div.appendChild(btn);
     });
+
     kb.appendChild(div);
   });
 }
 
-function updateKeyColors() {
-  const keyState = {};
-  for (let r = 0; r < currentRow; r++) {
-    for (let c = 0; c < 5; c++) {
-      const letter = board[r][c];
-      const state = revealed[r][c];
-      const priority = {correct:3, present:2, absent:1};
-      if (!keyState[letter] || priority[state] > priority[keyState[letter]]) {
-        keyState[letter] = state;
-      }
-    }
-  }
-  Object.entries(keyState).forEach(([letter, state]) => {
-    const btn = document.getElementById('key-' + letter.toLowerCase());
-    if (btn) { btn.className = 'key' + (btn.textContent.length > 1 ? ' wide' : '') + ' ' + state; }
-  });
-}
-
-// ── Guess Logic ────────────────────────────────────────────────────────────
-function evaluate(guess, answer) {
-  const result = Array(5).fill('absent');
-  const ansArr = answer.split('');
-  const gArr = guess.split('');
-  // Pass 1: correct
-  gArr.forEach((l,i) => { if (l === ansArr[i]) { result[i] = 'correct'; ansArr[i] = null; gArr[i] = null; } });
-  // Pass 2: present
-  gArr.forEach((l,i) => {
-    if (l === null) return;
-    const j = ansArr.indexOf(l);
-    if (j !== -1) { result[i] = 'present'; ansArr[j] = null; }
-  });
-  return result;
-}
-
-function revealRow(r, result, onDone) {
-  const DELAY = 300;
-  result.forEach((state, c) => {
-    setTimeout(() => {
-      revealed[r][c] = state;
-      const tile = document.getElementById(`tile-${r}-${c}`);
-      tile.classList.add('flip-' + state);
-      tile.addEventListener('animationend', () => {
-        tile.classList.remove('flip-' + state);
-        tile.classList.add('revealed', state);
-        // Update this letter's key colour as soon as its tile finishes flipping
-        const letter = board[r][c];
-        updateSingleKey(letter, state);
-      }, {once:true});
-      if (c === 4) setTimeout(() => { if (onDone) onDone(); }, DELAY);
-    }, c * DELAY);
-  });
-}
-
+/* Updates a single key's colour immediately when its tile is revealed.
+   Priority system: correct (3) > present (2) > absent (1).
+   A key never goes from a higher to a lower state
+   (e.g. if a letter was green, it won't turn red later). */
 function updateSingleKey(letter, newState) {
   const btn = document.getElementById('key-' + letter.toLowerCase());
   if (!btn) return;
-  const priority = {correct:3, present:2, absent:1};
-  // Only upgrade state, never downgrade (e.g. don't overwrite green with red)
-  const current = btn.dataset.state || '';
+
+  const priority = { correct: 3, present: 2, absent: 1 };
+  const current  = btn.dataset.state || '';
+
+  // Only update if the new state is a higher priority than the current one
   if (!current || priority[newState] > (priority[current] || 0)) {
     btn.dataset.state = newState;
     btn.className = 'key' + (btn.textContent.length > 1 ? ' wide' : '') + ' ' + newState;
   }
 }
 
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GUESS EVALUATION
+   Compares the player's guess against the answer and returns an array of
+   5 states: 'correct', 'present', or 'absent' for each position.
+
+   Two-pass algorithm (same as the real Wordle):
+   Pass 1 — find exact matches (correct position)
+   Pass 2 — find letters in the wrong position (present)
+   This handles duplicate letters correctly.
+══════════════════════════════════════════════════════════════════════════════ */
+function evaluate(guess, answer) {
+  const result = Array(5).fill('absent');  // start assuming all are wrong
+  const ansArr = answer.split('');         // mutable copy of answer letters
+  const gArr   = guess.split('');          // mutable copy of guess letters
+
+  // Pass 1: mark correct letters and null them out so they're not reused
+  gArr.forEach((letter, i) => {
+    if (letter === ansArr[i]) {
+      result[i]  = 'correct';
+      ansArr[i]  = null;  // remove from pool so it can't also count as 'present'
+      gArr[i]    = null;  // mark as handled
+    }
+  });
+
+  // Pass 2: check remaining letters against remaining answer letters
+  gArr.forEach((letter, i) => {
+    if (letter === null) return;  // already handled in pass 1
+    const j = ansArr.indexOf(letter);
+    if (j !== -1) {
+      result[i] = 'present';
+      ansArr[j] = null;  // consume this letter so it's not matched again
+    }
+  });
+
+  return result;  // e.g. ['correct', 'absent', 'present', 'absent', 'correct']
+}
+
+/* Animates the reveal of one full row, one tile at a time.
+   Each tile flips (3D rotation) with a 300ms stagger between tiles.
+   After each tile lands, the keyboard key for that letter is updated.
+   After the last tile lands, the onDone callback is called. */
+function revealRow(r, result, onDone) {
+  const DELAY = 300; // milliseconds between each tile flip
+
+  result.forEach((state, c) => {
+    setTimeout(() => {
+      // Store the result so we know this tile's state
+      revealed[r][c] = state;
+
+      const tile = document.getElementById(`tile-${r}-${c}`);
+
+      // Add the flip animation class
+      tile.classList.add('flip-' + state);
+
+      // When the flip animation finishes...
+      tile.addEventListener('animationend', () => {
+        tile.classList.remove('flip-' + state);   // remove animation class
+        tile.classList.add('revealed', state);    // apply the permanent colour class
+
+        // Update the keyboard key colour for this letter
+        updateSingleKey(board[r][c], state);
+      }, { once: true }); // { once: true } means the listener removes itself after firing
+
+      // After the last tile in the row has finished, call the completion callback
+      if (c === 4) {
+        setTimeout(() => { if (onDone) onDone(); }, DELAY);
+      }
+    }, c * DELAY); // stagger: tile 0 flips immediately, tile 1 after 300ms, etc.
+  });
+}
+
+/* Makes all tiles in a winning row bounce upward one by one */
 function bounceRow(r) {
   for (let c = 0; c < 5; c++) {
     setTimeout(() => {
       const tile = document.getElementById(`tile-${r}-${c}`);
       tile.classList.add('bounce');
-      tile.addEventListener('animationend', () => tile.classList.remove('bounce'), {once:true});
+      tile.addEventListener('animationend', () => tile.classList.remove('bounce'), { once: true });
     }, c * 80);
   }
 }
 
-// ── Message ────────────────────────────────────────────────────────────────
-let msgTimer;
-function showMessage(text, type='info', duration=2200) {
-  const area = document.getElementById('message-area');
-  clearTimeout(msgTimer);
-  area.innerHTML = `<div class="message ${type}">${text}</div>`;
-  if (duration > 0) msgTimer = setTimeout(() => area.innerHTML = '', duration);
+/* Makes all tiles in a row shake left-right (used for invalid guesses) */
+function shakeRow(r) {
+  const row = document.getElementById(`row-${r}`);
+  row.classList.add('shake');
+  row.addEventListener('animationend', () => row.classList.remove('shake'), { once: true });
 }
 
-// ── Input ──────────────────────────────────────────────────────────────────
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MESSAGES
+   Shows a temporary message in the message area.
+   type: 'info' | 'win' | 'lose'  (controls the colour)
+   duration: how long before it auto-hides (0 = stays until cleared)
+══════════════════════════════════════════════════════════════════════════════ */
+let msgTimer; // holds the setTimeout reference so we can cancel it
+
+function showMessage(text, type = 'info', duration = 2200) {
+  const area = document.getElementById('message-area');
+  clearTimeout(msgTimer); // cancel any previous auto-hide timer
+  area.innerHTML = `<div class="message ${type}">${text}</div>`;
+  if (duration > 0) {
+    msgTimer = setTimeout(() => { area.innerHTML = ''; }, duration);
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   INPUT HANDLER
+   Central function that processes every key press — whether from the
+   on-screen keyboard buttons or a physical keyboard.
+══════════════════════════════════════════════════════════════════════════════ */
 function handleKey(key) {
-  if (gameOver) return;
-  if (key === 'Backspace' || key === '⌫') {
-    if (currentCol > 0) { currentCol--; board[currentRow][currentCol] = ''; updateTile(currentRow, currentCol, ''); }
+  if (gameOver) return; // ignore input once the game has ended
+
+  if (key === 'Backspace') {
+    // Delete the last typed letter
+    if (currentCol > 0) {
+      currentCol--;
+      board[currentRow][currentCol] = '';
+      updateTile(currentRow, currentCol, '');
+    }
     return;
   }
-  if (key === 'Enter') { submitGuess(); return; }
+
+  if (key === 'Enter') {
+    submitGuess();
+    return;
+  }
+
+  // If it's a letter and there's still space in the row, add it
   if (/^[a-zA-Z]$/.test(key) && currentCol < 5) {
     board[currentRow][currentCol] = key.toLowerCase();
     updateTile(currentRow, currentCol, key);
@@ -1842,72 +2162,138 @@ function handleKey(key) {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   SUBMIT GUESS
+   Called when the player presses Enter.
+   Validates the guess, then reveals the result row by row.
+══════════════════════════════════════════════════════════════════════════════ */
 function submitGuess() {
-  if (currentCol < 5) { shakeRow(currentRow); showMessage('Not enough letters', 'info'); return; }
-  const guess = board[currentRow].join('');
-  if (!WORDS.includes(guess)) { shakeRow(currentRow); showMessage('Not in word list', 'info'); return; }
+  // Must have typed 5 letters
+  if (currentCol < 5) {
+    shakeRow(currentRow);
+    showMessage('Not enough letters', 'info');
+    return;
+  }
 
+  const guess = board[currentRow].join(''); // combine the 5 letters into a word
+
+  // Must be a word in our word list
+  if (!WORDS.includes(guess)) {
+    shakeRow(currentRow);
+    showMessage('Not in word list', 'info');
+    return;
+  }
+
+  // Evaluate the guess against the answer
   const result = evaluate(guess, answer);
+
+  // Animate the reveal, then check the outcome
   revealRow(currentRow, result, () => {
+
+    // Did the player get all 5 letters correct?
     if (result.every(r => r === 'correct')) {
       gameOver = true;
       bounceRow(currentRow);
-      const msgs = ['Perfect! 💕','Brilliant! ✨','Amazing! 🌟','You got it! 💖','Genius! 🎉','Well done! 🥰'];
-      showMessage(msgs[Math.min(currentRow, msgs.length-1)], 'win', 0);
-      stats.played++; stats.won++; stats.streak++; stats.best = Math.max(stats.best, stats.streak);
-      saveStats(); renderStats();
+
+      // Different congratulations messages depending on how many guesses it took
+      const msgs = ['Perfect! 💕', 'Brilliant! ✨', 'Amazing! 🌟', 'You got it! 💖', 'Genius! 🎉', 'Well done! 🥰'];
+      showMessage(msgs[Math.min(currentRow, msgs.length - 1)], 'win', 0);
+
+      // Update stats
+      stats.played++;
+      stats.won++;
+      stats.streak++;
+      stats.best = Math.max(stats.best, stats.streak); // update best streak if beaten
+      saveStats();
+      renderStats();
+
       document.getElementById('new-game-btn').style.display = 'inline-block';
       return;
     }
+
+    // Move to the next row
     currentRow++;
     currentCol = 0;
+
+    // If we've used all 6 guesses, the game is lost
     if (currentRow === 6) {
       gameOver = true;
-      showMessage(answer.toUpperCase(), 'lose', 0);
-      stats.played++; stats.streak = 0;
-      saveStats(); renderStats();
+      showMessage(answer.toUpperCase(), 'lose', 0); // reveal the answer
+      stats.played++;
+      stats.streak = 0; // losing resets the streak
+      saveStats();
+      renderStats();
       document.getElementById('new-game-btn').style.display = 'inline-block';
     }
   });
 }
 
-function shakeRow(r) {
-  const row = document.getElementById(`row-${r}`);
-  row.classList.add('shake');
-  row.addEventListener('animationend', () => row.classList.remove('shake'), {once:true});
-}
 
-// ── Physical keyboard ──────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════════
+   PHYSICAL KEYBOARD SUPPORT
+   Listens for keydown events on the document so players can type on a
+   real keyboard (useful on desktop or when a Bluetooth keyboard is connected).
+   Ignores modifier keys (Ctrl, Alt, Meta) to avoid intercepting shortcuts.
+══════════════════════════════════════════════════════════════════════════════ */
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   handleKey(e.key);
 });
 
-// ── New Game ───────────────────────────────────────────────────────────────
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   NEW GAME
+   Resets all state and rebuilds the board and keyboard fresh.
+══════════════════════════════════════════════════════════════════════════════ */
 function newGame() {
+  // Pick a random word from the list
   answer = WORDS[Math.floor(Math.random() * WORDS.length)];
-  currentRow = 0; currentCol = 0; gameOver = false;
-  board = Array.from({length:6}, ()=>Array(5).fill(''));
-  revealed = Array.from({length:6}, ()=>Array(5).fill(''));
+
+  // Reset game state
+  currentRow = 0;
+  currentCol = 0;
+  gameOver   = false;
+  board      = Array.from({ length: 6 }, () => Array(5).fill(''));
+  revealed   = Array.from({ length: 6 }, () => Array(5).fill(''));
+
+  // Rebuild the visual elements
   buildBoard();
   buildKeyboard();
+
+  // Clear any leftover message and hide the new game button
   document.getElementById('message-area').innerHTML = '';
   document.getElementById('new-game-btn').style.display = 'none';
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   INITIALISATION
+   This runs once when the page loads.
+   Render stats first, then start the first game.
+   The resize listener rebuilds the board if the window size changes
+   (e.g. phone rotated, or browser resized on desktop).
+══════════════════════════════════════════════════════════════════════════════ */
 renderStats();
 newGame();
 
 window.addEventListener('resize', () => { buildBoard(); });
 
-// ── Register Service Worker ─────────────────────────────────────────────────
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SERVICE WORKER REGISTRATION
+   Registers the service worker (sw.js) which enables:
+   - Offline play (game works without internet once loaded)
+   - Faster load times (assets cached locally)
+   We skip registration on Claude's preview domain because service workers
+   require HTTPS and the correct scope, which the preview doesn't support.
+══════════════════════════════════════════════════════════════════════════════ */
 if ('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent.com')) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js')
       .catch(err => console.log('SW registration failed:', err));
   });
 }
+
 </script>
 </body>
 </html>
