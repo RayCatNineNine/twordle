@@ -106,7 +106,7 @@ Everything is vanilla — no build tools, no frameworks, no dependencies:
 
 ## Credits
 
-Created by **[Your Name]** and **Claude** (Anthropic).
+Created by **RayCatzSaveTheFuture** and **Claude** (Anthropic).
 
 - Game concept, design direction, and feature decisions by **[Your Name]**
 - Code implementation, word list curation, and documentation by **Claude**
