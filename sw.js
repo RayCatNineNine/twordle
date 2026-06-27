@@ -1,4 +1,4 @@
-const CACHE = 'twordle-v2.1';
+const CACHE = 'twordle-v2.2';
 const ASSETS = [
   '/',
   '/index.html',
