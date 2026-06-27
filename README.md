@@ -4,7 +4,7 @@ A Wordle-style word guessing game for two, built as a single-page Progressive We
 
 ## Features
 
-- **2,315 official Wordle words** — the same answer list curated by Josh Wardle and used by The New York Times (no proper nouns, no obscure words)
+- **12,972 valid words** — uses the same two-list system as real Wordle: 2,315 curated answer words (fair, common, recognizable) plus 10,657 additional accepted guesses (so strategic words like ADIEU work)
 - **Installable PWA** — add it to your home screen and play offline
 - **Responsive design** — automatically sizes to fit any screen, from small phones to desktop
 - **Animated feedback** — tile flips, shakes, and bounces for a polished feel
