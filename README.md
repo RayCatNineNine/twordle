@@ -4,7 +4,7 @@ A Wordle-style word guessing game for two, built as a single-page Progressive We
 
 ## Features
 
-- **1,440 curated words** — common 5-letter English nouns, verbs, and adjectives (no proper nouns, no obscure words)
+- **2,315 official Wordle words** — the same answer list curated by Josh Wardle and used by The New York Times (no proper nouns, no obscure words)
 - **Installable PWA** — add it to your home screen and play offline
 - **Responsive design** — automatically sizes to fit any screen, from small phones to desktop
 - **Animated feedback** — tile flips, shakes, and bounces for a polished feel
@@ -106,7 +106,7 @@ Everything is vanilla — no build tools, no frameworks, no dependencies:
 
 ## Credits
 
-Created by **RayCatzSaveTheFuture** and **Claude** (Anthropic).
+Created by **[Your Name]** and **Claude** (Anthropic).
 
 - Game concept, design direction, and feature decisions by **[Your Name]**
 - Code implementation, word list curation, and documentation by **Claude**
